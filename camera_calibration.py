@@ -622,7 +622,8 @@ def visualize_views(camera_matrix,
     #the last 3 columns are translational vectors
     
     fig = plt.figure(figsize=figsize)
-    ax = fig.gca(projection='3d')
+    # ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.set_aspect("equal")
 
     min_values, max_values = _draw_camera_boards(ax, camera_matrix, cam_width, cam_height,
