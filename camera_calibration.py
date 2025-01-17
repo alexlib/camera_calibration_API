@@ -78,24 +78,25 @@ class Camera_Calibration_API:
         # reprojection error.
         if self.pattern_type in ["asymmetric_circles","symmetric_circles"]:
             self.subpixel_refinement = False
-            self.use_clustering = True
+            self.use_clustering = False
             # Setup Default SimpleBlobDetector parameters.
             self.blobParams = cv2.SimpleBlobDetector_Params()
             # Change thresholds
-            self.blobParams.minThreshold = 8
-            self.blobParams.maxThreshold = 255
+            self.blobParams.filterByColor = False
+            self.blobParams.minThreshold = 5
+            self.blobParams.maxThreshold = 250
             # Filter by Area.
             self.blobParams.filterByArea = True
-            self.blobParams.minArea = 50     # minArea may be adjusted to suit for your experiment
-            self.blobParams.maxArea = 10e5   # maxArea may be adjusted to suit for your experiment
+            self.blobParams.minArea = 2     # minArea may be adjusted to suit for your experiment
+            # self.blobParams.maxArea = 10e5   # maxArea may be adjusted to suit for your experiment
             # Filter by Circularity
-            self.blobParams.filterByCircularity = True
-            self.blobParams.minCircularity = 0.8
+            self.blobParams.filterByCircularity = False
+            self.blobParams.minCircularity = 0.1
             # Filter by Convexity
-            self.blobParams.filterByConvexity = True
+            self.blobParams.filterByConvexity = False
             self.blobParams.minConvexity = 0.87
             # Filter by Inertia
-            self.blobParams.filterByInertia = True
+            self.blobParams.filterByInertia = False
             self.blobParams.minInertiaRatio = 0.01
         if self.pattern_type == "asymmetric_circles":
             self.double_count_in_column = True # count the double circles in asymmetrical circular grid along the column

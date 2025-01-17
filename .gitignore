@@ -99,3 +99,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+examples/example_notebooks/debug_dir/B00001_a_pts_vis.png
+examples/example_notebooks/debug_dir/B00005_a_pts_vis.png
+examples/example_notebooks/debug_dir/B00013_a_pts_vis.png
+examples/example_notebooks/debug_dir/camera_centric_view.png
+examples/example_notebooks/debug_dir/pattern_centric_view.png
+examples/example_notebooks/debug_dir/reprojection_error.png
