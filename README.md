@@ -6,7 +6,23 @@
 
 [camera_calibration.py](./camera_calibration.py):contains an API which tries to minic the MATLAB's camera calibration app functionality. This API is a thin wrapper around the opencv's camera calibration functionalities.
 
+
 [examples](./examples): A directory containing various examples
+
+#### Blob Detection UI (Marimo)
+The repository now includes an interactive blob detector implemented as a Marimo notebook: [blob_detector_marimo_nb.py](./examples/example_notebooks/blob_detector_marimo_nb.py).
+
+This notebook provides a user interface for blob detection using OpenCV's SimpleBlobDetector. You can:
+- Upload images (TIFF, JPG, PNG)
+- Adjust detection parameters (thresholds, area, circularity, convexity, inertia)
+- Visualize detected blobs and grid corners interactively
+
+To use the Marimo notebook:
+1. Open [blob_detector_marimo_nb.py](./examples/example_notebooks/blob_detector_marimo_nb.py) in Marimo
+2. Adjust UI controls and upload your image
+3. View results and visualizations directly in the notebook
+
+**Note:** Streamlit-based UI has been removed in favor of Marimo for a more integrated notebook experience.
 
 
 ### Camera_Calibration_API:
