@@ -9,7 +9,6 @@ Created on Tue Feb 13 11:03:39 2018
 # Python 2/3 compatibility
 from __future__ import print_function
 # this is important else throws error
-from mpl_toolkits.mplot3d import Axes3D 
 
 from matplotlib import cm
 from numpy import linspace
@@ -690,7 +689,7 @@ if __name__ == "__main__":
     
     pattern_types = ["chessboard","symmetric_circles","asymmetric_circles"]
     
-    if args.images_dir == None or args.pattern_type == None or args.pattern_rows == 0 or args.pattern_columns == 0:
+    if args.images_dir is None or args.pattern_type is None or args.pattern_rows == 0 or args.pattern_columns == 0:
         raise ValueError("Give values for the first 4 arguments")
     assert args.pattern_type in pattern_types, "The --pattern_type must be one of {}. 'custom' pattern is not supported in terminal mode".format(pattern_types)
         
