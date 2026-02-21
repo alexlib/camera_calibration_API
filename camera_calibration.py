@@ -56,6 +56,7 @@ class Camera_Calibration_API:
                  distance_in_world_units = 1.0,
                  figsize = (8,8),
                  debug_dir = None,
+                 blobDetector = None,
                  term_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 30, 0.001)
                  ):
         
@@ -98,6 +99,10 @@ class Camera_Calibration_API:
             # Filter by Inertia
             self.blobParams.filterByInertia = False
             self.blobParams.minInertiaRatio = 0.01
+
+            self.blobDetector = blobDetector
+
+
         if self.pattern_type == "asymmetric_circles":
             self.double_count_in_column = True # count the double circles in asymmetrical circular grid along the column
             
@@ -148,7 +153,7 @@ class Camera_Calibration_API:
         found, corners = cv2.findChessboardCorners(img,(self.pattern_columns,self.pattern_rows))
         return(found,corners)
     
-    def _circulargrid_image_points(self,img,flags,blobDetector):
+    def _circulargrid_image_points(self,img,flags, blobDetector):
         found, corners = cv2.findCirclesGrid(img,(self.pattern_columns,self.pattern_rows),
                                              flags=flags,
                                              blobDetector=blobDetector
@@ -265,14 +270,22 @@ class Camera_Calibration_API:
         
         elif self.pattern_type == "symmetric_circles":
             pattern_points = self._symmetric_world_points() * self.distance_in_world_units
-            blobDetector = cv2.SimpleBlobDetector_create(self.blobParams)
+            if self.blobDetector is None:
+                blobDetector = cv2.SimpleBlobDetector_create(self.blobParams)
+            else:
+                blobDetector = self.blobDetector
+
             flags = cv2.CALIB_CB_SYMMETRIC_GRID
             if self.use_clustering:
                 flags = cv2.CALIB_CB_SYMMETRIC_GRID + cv2.CALIB_CB_CLUSTERING
         
         elif self.pattern_type == "asymmetric_circles":
             pattern_points = self._asymmetric_world_points() * self.distance_in_world_units
-            blobDetector = cv2.SimpleBlobDetector_create(self.blobParams)
+            if self.blobDetector is None:
+                blobDetector = cv2.SimpleBlobDetector_create(self.blobParams)
+            else:
+                blobDetector = self.blobDetector
+
             flags = cv2.CALIB_CB_ASYMMETRIC_GRID
             if self.use_clustering:
                 flags = cv2.CALIB_CB_ASYMMETRIC_GRID + cv2.CALIB_CB_CLUSTERING
