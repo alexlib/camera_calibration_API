@@ -9,11 +9,13 @@ def _():
     import marimo as mo
     import glob
     import matplotlib.pyplot as plt
+
     # '%matplotlib widget' command supported automatically in marimo
     import os, sys
     import cv2
+    from camera_calibration import Camera_Calibration_API
 
-    return cv2, glob, mo, os, plt
+    return Camera_Calibration_API, cv2, glob, mo, os, plt
 
 
 @app.cell(hide_code=True)
@@ -25,10 +27,16 @@ def _(mo):
 
 
 @app.cell
-def _(cv2, plt):
-    test_img = cv2.imread("/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/00000030_00000000849B30C6.tiff",0)
+def _():
+    image_path = "/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/00000009_00000000848D3231.tiff"
+    return (image_path,)
+
+
+@app.cell
+def _(cv2, image_path, plt):
+    test_img = cv2.imread(image_path, 0)
     print(test_img.shape)
-    plt.imshow(test_img,cmap="gray")
+    plt.imshow(test_img, cmap="gray")
     plt.title("One of the calibration images")
     # plt.show()
     return (test_img,)
@@ -64,13 +72,13 @@ def _(cv2, plt, test_img):
     # params.minInertiaRatio = 0.01
 
     # THIS IS THE KEY:
-    params.filterByColor = False 
+    params.filterByColor = False
 
     # Ensure other filters are set so it doesn't pick up noise
     params.filterByArea = True
     params.minArea = 50
     params.filterByCircularity = True
-    params.minCircularity = 0.7 # Adjust based on how round they are
+    params.minCircularity = 0.7  # Adjust based on how round they are
 
     # Create a detector with the parameters
     # OLD: detector = cv2.SimpleBlobDetector(params)
@@ -85,11 +93,17 @@ def _(cv2, plt, test_img):
     # the size of the circle corresponds to the size of blob
 
     blank = np.zeros((1, 1))
-    im_with_keypoints = cv2.drawKeypoints(test_img, keypoints, blank, (255, 0, 0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    im_with_keypoints = cv2.drawKeypoints(
+        test_img,
+        keypoints,
+        blank,
+        (255, 0, 0),
+        cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
+    )
 
     # Show blobs
     # plt.figure()
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(10, 10))
 
     # Displaying the image
     # plt.subplot(121)
@@ -104,13 +118,12 @@ def _(cv2, plt, test_img):
 
 @app.cell
 def _(cv2, detector, plt, test_img):
-    found, corners = cv2.findCirclesGrid(test_img,(7,6),
-                                            flags=cv2.CALIB_CB_SYMMETRIC_GRID,
-                                            blobDetector=detector
-                                            )
+    found, corners = cv2.findCirclesGrid(
+        test_img, (6, 7), flags=cv2.CALIB_CB_SYMMETRIC_GRID, blobDetector=detector
+    )
     vis = cv2.cvtColor(test_img, cv2.COLOR_GRAY2BGR)
-    cv2.drawChessboardCorners(vis, (7,6), corners, found)
-    plt.figure(figsize=(8,8))
+    cv2.drawChessboardCorners(vis, (6, 7), corners, found)
+    plt.figure(figsize=(8, 8))
     plt.imshow(vis)
     # plt.show()
     return
@@ -207,8 +220,15 @@ def _():
 
 @app.cell
 def _(Camera_Calibration_API, detector, os):
-    os.makedirs('./debug_dir', exist_ok=True)
-    symmetric_circles = Camera_Calibration_API(pattern_type='symmetric_circles', pattern_rows=7, pattern_columns=6, distance_in_world_units=120, debug_dir='./debug_dir', blobDetector=detector)
+    os.makedirs("./debug_dir", exist_ok=True)
+    symmetric_circles = Camera_Calibration_API(
+        pattern_type="symmetric_circles",
+        pattern_rows=7,
+        pattern_columns=6,
+        distance_in_world_units=120,
+        debug_dir="./debug_dir",
+        blobDetector=detector,
+    )
     return (symmetric_circles,)
 
 
@@ -216,7 +236,11 @@ def _(Camera_Calibration_API, detector, os):
 def _(glob, symmetric_circles):
     # magic command not supported in marimo; please file an issue to add support
     # %%time
-    results = symmetric_circles.calibrate_camera(glob.glob("/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/*.tiff"))
+    results = symmetric_circles.calibrate_camera(
+        glob.glob(
+            "/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/*.tiff"
+        )
+    )
     return
 
 
@@ -228,7 +252,7 @@ def _(symmetric_circles):
 
 @app.cell
 def _(symmetric_circles):
-    symmetric_circles.visualize_calibration_boards(20,10)
+    symmetric_circles.visualize_calibration_boards(20, 10)
     return
 
 
