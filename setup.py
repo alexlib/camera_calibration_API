@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="camera_calibration",
-    version="0.1.0",
+    version="0.1.1",
     description="Camera calibration tools and API based on the work of @Abhijit-2592",
     author="Alex Liberzon",
     packages=find_packages(),

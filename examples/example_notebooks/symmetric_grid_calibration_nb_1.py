@@ -28,7 +28,8 @@ def _(mo):
 
 @app.cell
 def _():
-    image_path = "/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/00000009_00000000848D3231.tiff"
+    # image_path = "/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/00000009_00000000848D3231.tiff"
+    image_path = "/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/00000030_00000000849B30C6.tiff"
     return (image_path,)
 
 
@@ -113,7 +114,7 @@ def _(cv2, plt, test_img):
     # plt.subplot(122)
     # plt.title('Blobs')
     plt.imshow(im_with_keypoints)
-    return (detector,)
+    return detector, np
 
 
 @app.cell
@@ -233,13 +234,14 @@ def _(Camera_Calibration_API, detector, os):
 
 
 @app.cell
-def _(glob, symmetric_circles):
+def _(glob, image_path, symmetric_circles):
     # magic command not supported in marimo; please file an issue to add support
     # %%time
     results = symmetric_circles.calibrate_camera(
         glob.glob(
             "/home/user/Downloads/Illmenau/KalibrierungA/Kalibrierung1a/*.tiff"
-        )
+        ),
+        origin_image_filename=image_path,
     )
     return
 
@@ -253,6 +255,150 @@ def _(symmetric_circles):
 @app.cell
 def _(symmetric_circles):
     symmetric_circles.visualize_calibration_boards(20, 10)
+    return
+
+
+@app.cell
+def _(symmetric_circles):
+    # Find the row where the image name contains '0000030'
+    target_row = symmetric_circles.calibration_df[
+        symmetric_circles.calibration_df["image_names"].str.contains("0000030")
+    ]
+    target_row
+    return (target_row,)
+
+
+@app.cell
+def _(cv2, mo, target_row):
+    import math
+    # import numpy as np # Already imported
+
+    # Define pixel size (mm/pixel) - adjust based on your specific sensor specs
+    pixel_size = 0.005
+
+    if len(target_row) > 0:
+        # 1. Extract rvec and tvec from the target_row
+        # target_row is a DataFrame, so we access the values of the first (and likely only) row
+        rvec_val = target_row["rvecs"].values[0]
+        tvec_val = target_row["tvecs"].values[0]
+
+        # 2. Compute Rotation Matrix R using Rodrigues
+        R_matrix, _ = cv2.Rodrigues(rvec_val)
+
+        # 3. Compute Camera Position in OpenCV World Coordinates
+        # Formula: C = -R^T * t
+        camera_pos_cv = -R_matrix.T @ tvec_val
+    
+        # 4. Convert to OpenPTV Coordinate System
+        # OpenCV: X right, Y down, Z into board (assuming board is at z=0)
+        # OpenPTV: X right, Y up, Z towards camera (out of board)
+        # Transformation: X -> X, Y -> -Y, Z -> -Z
+    
+        # Transform Position
+        camera_pos_optv = camera_pos_cv.copy()
+        camera_pos_optv[1] = -camera_pos_cv[1] # Flip Y
+        camera_pos_optv[2] = -camera_pos_cv[2] # Flip Z
+    
+        # Transform Rotation Matrix
+        # We are negating the Y and Z axes of the World Frame.
+        # This corresponds to negating the 2nd and 3rd columns of the Rotation Matrix.
+        R_optv = R_matrix.copy()
+        R_optv[:, 1] = -R_matrix[:, 1]
+        R_optv[:, 2] = -R_matrix[:, 2]
+
+        # 5. Compute Euler Angles (Phi, Omega, Kappa)
+        # Note: These formulas depend on the specific rotation order conventions of OpenPTV.
+        # Assuming the standard photogrammetric rotation matrix structure.
+    
+        phi = math.asin(R_optv[0, 2])
+        omega = math.atan2(-R_optv[1, 2], R_optv[2, 2])
+        kappa = math.atan2(-R_optv[0, 1], R_optv[0, 0])
+    
+        # Convert to degrees for readability
+        phi_deg = math.degrees(phi)
+        omega_deg = math.degrees(omega)
+        kappa_deg = math.degrees(kappa)
+
+        display_output = mo.md(f"""
+        ### Camera Position and Orientation (OpenPTV)
+    
+        **Position (World Coordinates):**
+        - X: {camera_pos_optv[0][0]:.4f}
+        - Y: {camera_pos_optv[1][0]:.4f}
+        - Z: {camera_pos_optv[2][0]:.4f}
+    
+        **Orientation (Radians):**
+        - Phi: {phi:.4f}
+        - Omega: {omega:.4f}
+        - Kappa: {kappa:.4f}
+
+        **Orientation (Degrees):**
+        - Phi: {phi_deg:.4f}
+        - Omega: {omega_deg:.4f}
+        - Kappa: {kappa_deg:.4f}
+        """)
+    else:
+        display_output = mo.md("Target row not found. Please check if the image name matches.")
+
+    display_output
+    return
+
+
+@app.cell
+def _(symmetric_circles):
+    symmetric_circles.calibration_df.to_csv("./calibration_results_cam0.csv", index=False)
+    return
+
+
+@app.cell
+def _(np, plt, target_row):
+    # Extract the object points from the dataframe row
+    # Assuming the format is compatible with OpenCV (N, 3) or (N, 1, 3)
+    obj_pts_raw = target_row['obj_points'].values[0]
+    obj_pts_arr = np.array(obj_pts_raw)
+
+    # Squeeze dimensions if necessary (e.g. from (N, 1, 3) to (N, 3))
+    if obj_pts_arr.ndim == 3:
+        obj_pts_arr = obj_pts_arr.squeeze()
+    
+    # Create 3D plot
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Scatter plot
+    ax.scatter(obj_pts_arr[:, 0], obj_pts_arr[:, 1], obj_pts_arr[:, 2], c='blue', marker='o')
+
+    # Add labels and title
+    ax.set_xlabel('X World')
+    ax.set_ylabel('Y World')
+    ax.set_zlabel('Z World')
+    ax.set_title('3D Object Points (Calibration Pattern)')
+
+    # Attempt to set aspect ratio to be roughly equal to see the grid structure correctly
+    # (Matplotlib 3D auto-scaling can sometimes distort geometries)
+    all_coords = obj_pts_arr.flatten()
+    min_limit = np.min(all_coords)
+    max_limit = np.max(all_coords)
+    ax.set_xlim([np.min(obj_pts_arr[:,0]), np.max(obj_pts_arr[:,0])])
+    ax.set_ylim([np.min(obj_pts_arr[:,1]), np.max(obj_pts_arr[:,1])])
+    ax.set_zlim([np.min(obj_pts_arr[:,2]) - 10, np.max(obj_pts_arr[:,2]) + 10]) # Give Z some range even if flat
+
+    # User requested view: Z towards us, X to right, Y upwards.
+    # Standard Matplotlib 3D:
+    #   Z is "Up".
+    #   X/Y are on "floor".
+    # To make Z point "towards us" (out of screen), we look from "top".
+    #   This is elev=90.
+    #   At elev=90, X is Horizontal, Y is Vertical by default?
+    #   Let's check. usually at elev=90, azim=-90, X is right, Y is up.
+    # ax.view_init(elev=90, azim=-90)
+
+    plt.gca()
+    return
+
+
+@app.cell
+def _():
     return
 
 

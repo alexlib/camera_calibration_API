@@ -201,6 +201,7 @@ class Camera_Calibration_API:
                          threads = 4,
                          custom_world_points_function=None,
                          custom_image_points_function=None,
+                         origin_image_filename=None,
                          ):
         
         """ User facing method to calibrate the camera
@@ -261,6 +262,10 @@ class Camera_Calibration_API:
         img_points = []
         obj_points = []
         working_images = []
+        # Move origin image to first position if specified
+        if origin_image_filename is not None:
+            images_path_list = [img for img in images_path_list if img != origin_image_filename]
+            images_path_list.insert(0, origin_image_filename)
         images_path_list.sort()
         print("There are {} {} images given for calibration".format(len(images_path_list),self.pattern_type))
         

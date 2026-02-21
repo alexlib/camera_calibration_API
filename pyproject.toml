@@ -1,3 +1,11 @@
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "marimo>=0.20.1",
+]
+
+[tool.marimo.runtime]
+pythonpath = ["camera_calibration"]
